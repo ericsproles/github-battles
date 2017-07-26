@@ -21,10 +21,32 @@ function SelectLanguage (props) {
   )
 }
 
-SelectLanguage.propTypes = {
-  selectedLanguage: PropTypes.string.isRequired,
-  onSelect: PropTypes.func.isRequired,
-};
+function RepoGrid (props) {
+  return (
+    <ul className='popular-list'>  
+      {props.repos.map((repo, index) => {
+        return (
+          <li key={repo.name} className='popular-item'>
+            <div className='popular-rank'>#{index + 1}</div>
+            <ul className='space-list-items'> 
+              <li>
+                <img 
+                  className='avatar'
+                  src={repo.owner.avatar_url} 
+                  alt={'Avatar for ' + repo.owner.login} 
+                />
+              </li>
+              <li><a href={repo.html_url}>{repo.name}</a></li>
+              <li>@{repo.owner.login}</li>
+              <li>{repo.stargazers_count} stars</li>
+            </ul>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 
 class Popular extends React.Component {
   constructor(props) {
@@ -36,29 +58,54 @@ class Popular extends React.Component {
 
     this.updateLanguage = this.updateLanguage.bind(this);
   }
-componentDidMount () {
-  api.fetchPopularRepos(this.state.selectedLanguage)
-    .then(function (repos) {
-      console.log(repos);
-    })
-}
+
+  componentDidMount () {
+  this.updateLanguage(this.state.selectedLanguage);
+  }
 
   updateLanguage(lang) {
     this.setState(function () {
       return {
         selectedLanguage: lang,
+        repos: null,
       }
-    });
+    })
+
+    api.fetchPopularRepos(lang)
+      .then( (repos) => {
+        this.setState(() => {
+          return {
+            repos: repos
+          }
+        })
+      });
   }
   render() {
+    console.log(this.state.repos);
     return (
       <div>
         <SelectLanguage
           selectedLanguage={this.state.selectedLanguage}
-          onSelect={this.updateLanguage} />
+          onSelect={this.updateLanguage} 
+        />
+        {!this.state.repos 
+          ? <p>LOADING</p> 
+          : <RepoGrid repos={this.state.repos}/>}
       </div>
     )
   }
 }
 
+RepoGrid.PropTypes = {
+  repos: PropTypes.array.isRequired,
+}
+
+SelectLanguage.propTypes = {
+  selectedLanguage: PropTypes.string.isRequired,
+  onSelect: PropTypes.func.isRequired,
+};
+
+
 module.exports = Popular;
+        
+// {JSON.stringify(this.state.repos, 2, null)}
